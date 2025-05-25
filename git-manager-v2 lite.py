@@ -229,6 +229,75 @@ def branch_management():
 def gitignore_management():
     footer = ""
     selected = 0
+
+    python_template = """
+# Byte-compiled / optimized / DLL files
+__pycache__/
+*.py[cod]
+*$py.class
+
+# Distribution / packaging
+.Python
+env/
+venv/
+.env
+.venv
+build/
+develop-eggs/
+dist/
+downloads/
+eggs/
+.eggs/
+lib/
+lib64/
+parts/
+sdist/
+var/
+*.egg-info/
+.installed.cfg
+*.egg
+
+# PyInstaller
+*.manifest
+*.spec
+
+# Installer logs
+pip-log.txt
+pip-delete-this-directory.txt
+
+# Unit test / coverage reports
+htmlcov/
+.tox/
+.nox/
+.coverage
+.coverage.*
+.cache
+nosetests.xml
+coverage.xml
+*.cover
+*.py,cover
+.hypothesis/
+.pytest_cache/
+
+# Jupyter Notebook
+.ipynb_checkpoints
+
+# mypy
+.mypy_cache/
+
+# Environments
+.env
+.venv
+env/
+venv/
+ENV/
+env.bak/
+venv.bak/
+
+# VS Code
+.vscode/
+""".strip()
+
     while True:
         options = [
             "Просмотр .gitignore",
@@ -242,57 +311,62 @@ def gitignore_management():
         if selected == 0:
             if os.path.exists(".gitignore"):
                 with open(".gitignore", "r", encoding="utf-8") as f:
-                    footer = f.read()
+                    content = f.read()
+                    footer = content if content.strip() else ".gitignore пуст."
             else:
                 footer = ".gitignore не найден."
+
         elif selected == 1:
             entries = input("Введите записи (через запятую): ").strip()
+            new_entries = [entry.strip() for entry in entries.split(',') if entry.strip()]
+            if not new_entries:
+                footer = "Ни одной валидной записи не введено."
+                continue
+
+            existing_entries = set()
+            if os.path.exists(".gitignore"):
+                with open(".gitignore", "r", encoding="utf-8") as f:
+                    existing_entries = set(line.strip() for line in f if line.strip())
+
+            added = []
             with open(".gitignore", "a", encoding="utf-8") as f:
-                for entry in entries.split(','):
-                    f.write(entry.strip() + "\n")
-            footer = "Записи добавлены."
+                for entry in new_entries:
+                    if entry not in existing_entries:
+                        f.write(entry + "\n")
+                        added.append(entry)
+
+            footer = f"Добавлены: {', '.join(added)}" if added else "Все записи уже существуют."
+
         elif selected == 2:
             target = input("Запись для удаления: ").strip()
+            if not target:
+                footer = "Удаление отменено: пустая строка."
+                continue
+
             if not os.path.exists(".gitignore"):
                 footer = ".gitignore не найден."
                 continue
+
             with open(".gitignore", "r", encoding="utf-8") as f:
                 lines = f.readlines()
-            with open(".gitignore", "w", encoding="utf-8") as f:
-                for line in lines:
-                    if line.strip() != target:
-                        f.write(line)
-            footer = f"Удалена запись: {target}"
+
+            updated_lines = [line for line in lines if line.strip() != target]
+
+            if len(updated_lines) == len(lines):
+                footer = f"Запись '{target}' не найдена."
+            else:
+                with open(".gitignore", "w", encoding="utf-8") as f:
+                    f.writelines(updated_lines)
+                footer = f"Удалена запись: {target}"
+
         elif selected == 3:
-            template = [
-                "__pycache__/",
-                "*.py[cod]",
-                "*.pyc",
-                "*.pyo",
-                "*.pyd",
-                ".Python",
-                "env/",
-                "venv/",
-                ".env",
-                ".venv",
-                "build/",
-                "develop-eggs/",
-                "dist/",
-                "downloads/",
-                "eggs/",
-                "*.egg-info/",
-                "*.egg",
-                ".mypy_cache/",
-                ".pytest_cache/",
-                ".idea/",
-                ".vscode/",
-                "*.log"
-            ]
             with open(".gitignore", "w", encoding="utf-8") as f:
-                f.write("\n".join(template) + "\n")
+                f.write(python_template + "\n")
             footer = "Базовый шаблон Python применён."
+
         elif selected == 4:
             return footer
+
 
 def remote_management():
     footer = ""
